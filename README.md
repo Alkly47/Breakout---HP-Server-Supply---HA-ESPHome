@@ -10,7 +10,7 @@ Exposes:
  - Fan speed reporting and control (Minimum Limit??)
  - Intake Air Temperature and Internal PSU Temperature
  - AC Input: Voltage, Current, and Power
- - DC Output: Voltage, Current, Power, and "Peak" Current (A value that resets after AC power is removed)
+ - DC Output: Voltage, Current, Power, and "Peak" Current (A value that resets to zero each time the output cycles "off")
  - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt
 
 Usage:
