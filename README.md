@@ -5,7 +5,7 @@ Firmware to integrate my breakout board into Home Assistant via ESPHome
 
 This code creates a PMBus/i2c custom ESPHome component compatible with my breakout board and an attached SSD1306 OLED display. Built with Arduino Framework for ESP8266. (The code as-is doesn't work on ESP32 or it's variants)
 
-Exposes:
+Exposes: (All data comes from PSU except ADS1115)
  - Embedded information about the PSU ("Name", Manufacturer, Manufactured Date, "Spare Part" Number, "Option Kit" Number, and "CT" Barcode)
  - Fan speed reporting and control (Minimum Limit)
  - Intake Air Temperature and Internal PSU Temperature
@@ -21,4 +21,4 @@ Usage:
  - *During compile, there are warnings that can be ignored. (The result of code being manipulated and forced to work with ESPHome)*
  - *Due to i2c/PMBus limitations, the working bus speed is not quite fast enough to avoid warnings/errors about OLED display "taking too long". These do not affect functionality and can be ignored.*
 
-Note: Current and Power reporting is questionable at low load. The PSU seems unable to report values lower than 3 amps or 20 watts. Utilizing the data from the ADS115 at low loads in more reliable.
+Note: Current and Power reporting is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
