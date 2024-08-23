@@ -13,7 +13,9 @@ Exposes: (All data comes from PSU except ADS1115)
  - DC Output: Voltage, Current, Power, and "Peak" Current (A value that resets to zero each time the output cycles "off")
  - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt
 
-Usage:
+Note: Current and Power reporting is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
+
+Usage to compile yourself:
  - Copy the CSPS and fonts folders to your ./esphome directory, maintaining folder structure and file-names.
  - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
@@ -21,4 +23,4 @@ Usage:
  - *During compile, there are warnings that can be ignored. (The result of code being manipulated and forced to work with ESPHome)*
  - *Due to i2c/PMBus limitations, the working bus speed is not quite fast enough to avoid warnings/errors about OLED display "taking too long". These do not affect functionality and can be ignored.*
 
-Note: Current and Power reporting is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
+
