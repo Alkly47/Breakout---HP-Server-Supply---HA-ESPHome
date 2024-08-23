@@ -49,7 +49,7 @@ ads1115:
 number:
   - platform: template
     id: csps_rpm
-    name: "Power Fan RPM"
+    name: "Minimum Fan RPM"
     optimistic: true
     min_value: 1500
     max_value: 18000
@@ -74,6 +74,7 @@ text_sensor:
       auto text = new CSPStext();
       App.register_component(text);
       return {text->name,text->mfr,text->mfg,text->ct,text->spn,text->okn};
+
     text_sensors:
     - name: "PSU Name"
     - name: "Manufacturer"
@@ -95,10 +96,9 @@ sensor:
     gain: 4.096
     name: "12v Main Current"
     filters:
-        - multiply: 38.09523   ## 1 divided by 0.02625 = 38.09523 (26.25mA / Amp)
+        - multiply: 26.25   ## (26.25mV / Amp)
     unit_of_measurement: "A"
     update_interval: 1s  
-  
   - platform: ads1115
     id: ads_12v_main_voltage
     device_class: voltage
@@ -109,7 +109,6 @@ sensor:
         - multiply: 3.75
     unit_of_measurement: "V"
     update_interval: 5s
-  
   - platform: ads1115
     id: ads_12v_stby_voltage
     device_class: voltage
@@ -120,7 +119,6 @@ sensor:
         - multiply: 3.75
     unit_of_measurement: "V"
     update_interval: 5s
-  
   - platform: ads1115
     id: ads_5v_stby_voltage
     device_class: voltage
@@ -137,6 +135,7 @@ sensor:
       auto other = new CSPSOther();
       App.register_component(other);
       return {other->pao};
+
     sensors:
     - name: "Peak Amps Out"
       id: peak_amps_out
@@ -149,6 +148,7 @@ sensor:
       auto fan = new CSPSFan();
       App.register_component(fan);
       return {fan->fan_speed};
+
     sensors:
     - name: "Fan Speed"
       id: fan_speed
@@ -190,6 +190,7 @@ sensor:
       auto powerout = new CSPSPowerOut();
       App.register_component(powerout);
       return {powerout->power_out, powerout->current_out, powerout->voltage_out};
+
     sensors:
     - name: "Power Out"
       id: power_out
@@ -197,7 +198,7 @@ sensor:
       device_class: power
       unit_of_measurement: W
       filters:
-        #- filter_out: 20 
+#        - filter_out: 36 
         - or:
           - throttle: 1s
           - delta: .5
@@ -207,7 +208,7 @@ sensor:
       device_class: current
       unit_of_measurement: A
       filters:
-        - filter_out: 3 
+#        - filter_out: 3
         - or:
           - throttle: 1s
           - delta: .1
@@ -234,6 +235,7 @@ sensor:
       device_class: power
       unit_of_measurement: W
       filters:
+#        - filter_out: 50
         - or:
           - throttle: 1s
           - delta: .5
@@ -243,7 +245,7 @@ sensor:
       device_class: current
       unit_of_measurement: A
       filters:
-        - filter_out: 3 
+#        - filter_out: 3
         - or:
           - throttle: 1s
           - delta: .1    
@@ -263,6 +265,7 @@ font:
     id: body_font
     size: 12
     bpp: 2
+
   - file: "fonts/Roboto-Regular.ttf"
     id: header_font
     size: 15
@@ -310,4 +313,3 @@ interval:
     then:
       - display.page.show_next: oled_display
       - component.update: oled_display
-
