@@ -323,8 +323,8 @@ display:
           else {
             it.printf(0, 0, id(header_font), "WIFI         %.0f dbm", id(esp_signal).state);
             it.printf(0, 20, id(body_font), "IP:  %s", id(esp_IP).state.c_str());
-            it.printf(0, 34, id(body_font), "- %s -", id(esp_MAC).state.c_str());
-            it.printf(0, 48, id(body_font), "SSID:  %s", id(esp_SSID).state.c_str());
+            it.printf(0, 34, id(body_font), "SSID:  %s", id(esp_SSID).state.c_str());
+            it.printf(0, 48, id(body_font), "- %s -", id(esp_MAC).state.c_str());
           }
           
           
