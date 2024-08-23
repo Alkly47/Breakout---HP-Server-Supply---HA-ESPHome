@@ -14,8 +14,8 @@ Exposes: (All data comes from PSU except ADS1115)
  - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt
 
 Usage:
- - Pull the full repo and copy to ESPHome directory in Home Assistant, maintaining folder structure and file-names. 
- - Modify yaml with appropriate api, ota, and wifi creds.
+ - Copy the CSPS and fonts folders to your ./esphome directory, maintaining folder structure and file-names.
+ - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
 
  - *During compile, there are warnings that can be ignored. (The result of code being manipulated and forced to work with ESPHome)*
