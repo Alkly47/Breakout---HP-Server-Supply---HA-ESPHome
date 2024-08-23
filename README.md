@@ -21,6 +21,6 @@ Usage to compile yourself:
  - Install to device.
 
  - *During compile, there are warnings that can be ignored. (The result of code being manipulated and forced to work with ESPHome)*
- - *Due to i2c/PMBus limitations, the working bus speed is not quite fast enough to avoid warnings/errors about OLED display "taking too long". These do not affect functionality and can be ignored.*
+ - *Due to i2c/PMBus limitations, the working bus speed is not quite fast enough to avoid log warnings/errors about OLED display "taking too long". These do not affect functionality and can be ignored.*
 
 
