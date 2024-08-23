@@ -14,5 +14,4 @@ Connect to the hotspot and navigate to the captive portal ("Sign into this netwo
 
 Versions that include Home Assistant API become directly discoverable by Home Assistant via the ESPHome Add-On.
 
-YAML Files used during compile are included for inspection, but are not utilized when flashing a BIN file.
-If modifications are desired, you need to self-compile.
+YAML Files used during compile are included for inspection, but are not utilized when flashing a BIN file. If modifications are desired, you need to compile the firmware yourself.
