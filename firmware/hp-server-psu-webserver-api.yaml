@@ -1,0 +1,334 @@
+esphome:
+  name: hp-server-psu
+  friendly_name: HP Server PSU
+  libraries:
+    - Wire
+  includes:
+    - CSPS/main.h
+    - CSPS/KCORES_CSPS.h
+    - CSPS/KCORES_CSPS.cpp
+    
+esp8266:
+  board: d1_mini
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+  password: ""
+
+wifi:
+  ap:
+    ssid: "HP Server PSU"
+    password: "123456789"
+
+captive_portal:
+  id: my_portal
+improv_serial:
+web_server:
+  port: 80
+  log: false
+  version: 2
+
+status_led:
+  pin:
+    number: D4
+    inverted: true
+
+i2c:
+  - frequency: 100kHz ## 200kHz seems to be maximum, sort-of stable, bus speed for the PSU, but results in occasional corrupt data; faster results in complete bus lockup and esp crash. 100kHz is the recommended frequency in my testing.
+
+ads1115:
+  - address: 0x48
+
+number:
+  - platform: template
+    id: csps_rpm
+    name: "Minimum Fan RPM"
+    optimistic: true
+    min_value: 1500
+    max_value: 18000
+    step: 500
+    on_value:
+      then:
+        - lambda: |-
+            auto fan = new CSPSFan();
+            App.register_component(fan);
+            fan->set_fan_rpm(id(csps_rpm).state);
+
+text_sensor:
+  - platform: wifi_info
+    ip_address: 
+      name: esp-IP
+      id: esp_IP
+    mac_address: 
+      name: esp-MAC
+      id: esp_MAC
+    ssid: 
+      name: esp-SSID
+      id: esp_SSID
+  - platform: custom
+    lambda: |-
+      auto text = new CSPStext();
+      App.register_component(text);
+      return {text->name,text->mfr,text->mfg,text->ct,text->spn,text->okn};
+
+    text_sensors:
+    - name: "PSU Name"
+    - name: "Manufacturer"
+    - name: "Manuf. Date"
+    - name: "CT Bar Code"
+    - name: "Spare Part No."
+    - name: "Option Kit No."
+
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal Sensor"
+    id: esp_signal
+    update_interval: 10s
+
+  - platform: ads1115
+    id: ads_12v_main_current
+    device_class: current
+    multiplexer: 'A0_GND'
+    gain: 4.096
+    name: "12v Main Current"
+    filters:
+        - multiply: 26.25   ## (26.25mV / Amp)
+    unit_of_measurement: "A"
+    update_interval: 1s  
+  - platform: ads1115
+    id: ads_12v_main_voltage
+    device_class: voltage
+    multiplexer: 'A1_GND'
+    gain: 4.096
+    name: "12v Main Voltage"
+    filters:
+        - multiply: 3.75
+    unit_of_measurement: "V"
+    update_interval: 5s
+  - platform: ads1115
+    id: ads_12v_stby_voltage
+    device_class: voltage
+    multiplexer: 'A2_GND'
+    gain: 4.096
+    name: "12v STBY Voltage"
+    filters:
+        - multiply: 3.75
+    unit_of_measurement: "V"
+    update_interval: 5s
+  - platform: ads1115
+    id: ads_5v_stby_voltage
+    device_class: voltage
+    multiplexer: 'A3_GND'
+    gain: 4.096
+    name: "5v STBY Voltage"
+    filters:
+        - multiply: 1.666667
+    unit_of_measurement: "V"
+    update_interval: 5s
+
+  - platform: custom
+    lambda: |-
+      auto other = new CSPSOther();
+      App.register_component(other);
+      return {other->pao};
+
+    sensors:
+    - name: "Peak Amps Out"
+      id: peak_amps_out
+      accuracy_decimals: 1
+      device_class: current
+      unit_of_measurement: "A"
+
+  - platform: custom
+    lambda: |-
+      auto fan = new CSPSFan();
+      App.register_component(fan);
+      return {fan->fan_speed};
+
+    sensors:
+    - name: "Fan Speed"
+      id: fan_speed
+      accuracy_decimals: 0
+      device_class: speed
+      unit_of_measurement: RPM
+      filters: 
+        - or:
+          - throttle: 5s
+          - delta: 5.0
+
+  - platform: custom
+    lambda: |-
+      auto temp = new CSPSTemp();
+      App.register_component(temp);
+      return {temp->temp1, temp->temp2};
+    sensors: 
+    - name: "Intake Air Temp"
+      id: temp1
+      accuracy_decimals: 1
+      device_class: temperature
+      unit_of_measurement: °C
+      filters: 
+        - or:
+          - throttle: 15s
+          - delta: .5
+    - name: "Internal PSU Temp"
+      id: temp2
+      accuracy_decimals: 1
+      device_class: temperature
+      unit_of_measurement: °C
+      filters: 
+        - or:
+          - throttle: 15s
+          - delta: .5
+
+  - platform: custom
+    lambda: |-
+      auto powerout = new CSPSPowerOut();
+      App.register_component(powerout);
+      return {powerout->power_out, powerout->current_out, powerout->voltage_out};
+
+    sensors:
+    - name: "Power Out"
+      id: power_out
+      accuracy_decimals: 1
+      device_class: power
+      unit_of_measurement: W
+      filters:
+#        - filter_out: 36 
+        - or:
+          - throttle: 1s
+          - delta: .5
+    - name: "Current Out"
+      id: current_out
+      accuracy_decimals: 1
+      device_class: current
+      unit_of_measurement: A
+      filters:
+#        - filter_out: 3
+        - or:
+          - throttle: 1s
+          - delta: .1
+    - name: "Voltage Out"
+      id: voltage_out
+      accuracy_decimals: 1
+      device_class: voltage
+      unit_of_measurement: V
+      filters:
+        - filter_out: 1.5 
+        - or:
+          - throttle: 5s
+          - delta: .1
+
+  - platform: custom
+    lambda: |-
+      auto powerin = new CSPSPowerIn();
+      App.register_component(powerin);
+      return {powerin->power_in, powerin->current_in, powerin->voltage_in};
+    sensors: 
+    - name: "Power In"
+      id: power_in
+      accuracy_decimals: 1
+      device_class: power
+      unit_of_measurement: W
+      filters:
+#        - filter_out: 50
+        - or:
+          - throttle: 1s
+          - delta: .5
+    - name: "Current In"
+      id: current_in
+      accuracy_decimals: 1
+      device_class: current
+      unit_of_measurement: A
+      filters:
+#        - filter_out: 3
+        - or:
+          - throttle: 1s
+          - delta: .1    
+    - name: "Voltage In"
+      id: voltage_in
+      accuracy_decimals: 1
+      device_class: voltage
+      unit_of_measurement: V
+      filters:
+        - filter_out: 1.5 
+        - or:
+          - throttle: 5s
+          - delta: .1
+
+font:
+  - file: "fonts/Roboto-Regular.ttf"
+    id: body_font
+    size: 12
+    bpp: 2
+
+  - file: "fonts/Roboto-Regular.ttf"
+    id: header_font
+    size: 15
+    bpp: 2
+    
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    id: oled_display
+    address: 0x3C
+    update_interval: .5s
+    pages: 
+      - id: page1
+        lambda: |-
+          it.print(0, 0, id(header_font), "AC INPUT");
+          it.printf(0, 20, id(body_font), "Voltage:   %.3f V", id(voltage_in).state);
+          it.printf(0, 34, id(body_font), "Current:   %.2f A", id(current_in).state);
+          it.printf(0, 48, id(body_font), "Power:   %.1f W", id(power_in).state);
+      - id: page2
+        lambda: |-
+          it.print(0, 0, id(header_font), "DC OUTPUT");
+          it.printf(0, 20, id(body_font), "Voltage:   %.3f V", id(voltage_out).state);
+          it.printf(0, 34, id(body_font), "Current:   %.2f A", id(current_out).state);
+          it.printf(0, 48, id(body_font), "Power:   %.1f W", id(power_out).state);
+      - id: page3
+        lambda: |-
+          it.print(0, 0, id(header_font), "THERMALS");
+          it.printf(0, 20, id(body_font), "Intake Temp:   %.2f° C", id(temp1).state);
+          it.printf(0, 34, id(body_font), "PSU Temp:   %.2f° C", id(temp2).state);
+          it.printf(0, 48, id(body_font), "Fan:   %.0f rpm", id(fan_speed).state);
+      - id: page4
+        lambda: |-
+          it.print(0, 0, id(header_font), "ADS1115");
+          it.printf(0, 20, id(body_font), "DC Out:  %.1fV", id(ads_12v_main_voltage).state);
+          it.printf(88, 20, id(body_font), ": %.1fA", id(ads_12v_main_current).state);
+          it.printf(0, 34, id(body_font), "12v STBY:  %.3fV", id(ads_12v_stby_voltage).state);
+          it.printf(0, 48, id(body_font), "5v STBY:  %.3fV", id(ads_5v_stby_voltage).state);
+      - id: page5
+        lambda: |-
+          it.printf(0, 0, id(header_font), "PEAK AMPS OUT");
+          it.printf(0, 30, id(header_font), "%.3fA", id(peak_amps_out).state);
+      - id: page6
+        lambda: |-
+          if (id(my_portal).is_active()) {
+            it.print(0, 0, id(header_font), "HOTSPOT ACTIVE");
+            it.print(0, 20, id(body_font), "SSID:  HP Server PSU");
+            it.print(0, 34, id(body_font), "PASS:  123456789");
+            it.printf(0, 48, id(body_font), "- %s -", id(esp_MAC).state.c_str());
+            }
+          else {
+            it.printf(0, 0, id(header_font), "WIFI         %.0f dbm", id(esp_signal).state);
+            it.printf(0, 20, id(body_font), "IP:  %s", id(esp_IP).state.c_str());
+            it.printf(0, 34, id(body_font), "- %s -", id(esp_MAC).state.c_str());
+            it.printf(0, 48, id(body_font), "SSID:  %s", id(esp_SSID).state.c_str());
+          }
+          
+          
+
+interval:
+  - interval: 5s
+    then:
+      - display.page.show_next: oled_display
+      - component.update: oled_display
+
+
