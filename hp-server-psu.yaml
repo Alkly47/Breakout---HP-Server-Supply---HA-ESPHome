@@ -14,12 +14,16 @@ esp8266:
 logger:
 
 api:
+  encryption:
+    key: ""
 
 ota:
   platform: esphome
   password: ""
 
 wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
   ap:
     ssid: "HP Server PSU"
     password: "123456789"
