@@ -14,7 +14,7 @@ Exposes:
  - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt
 
 Usage:
- - Pull the full repo and copy to ESPHome directory in Home Assistant, maintaining folder structure. 
+ - Pull the full repo and copy to ESPHome directory in Home Assistant, maintaining folder structure and file-names (*Important*). 
  - Modify yaml with appropriate api, ota, and wifi creds.
  - Install to device.
 
