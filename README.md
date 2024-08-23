@@ -7,7 +7,7 @@ This code creates a PMBus/i2c custom ESPHome component compatible with my breako
 
 Exposes:
  - Embedded information about the PSU ("Name", Manufacturer, Manufactured Date, "Spare Part" Number, "Option Kit" Number, and "CT" Barcode)
- - Fan speed reporting and control (Minimum Limit??)
+ - Fan speed reporting and control (Minimum Limit)
  - Intake Air Temperature and Internal PSU Temperature
  - AC Input: Voltage, Current, and Power
  - DC Output: Voltage, Current, Power, and "Peak" Current (A value that resets to zero each time the output cycles "off")
