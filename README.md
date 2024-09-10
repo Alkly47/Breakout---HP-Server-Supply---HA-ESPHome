@@ -15,7 +15,7 @@ Exposes: (All data comes from PSU except ADS1115)
 
 Note: Current and Power reporting is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
 
-Usage to compile yourself:
+To compile yourself:
  - Copy the CSPS and fonts folders to your ./esphome directory, maintaining folder structure and file-names.
  - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
