@@ -5,7 +5,9 @@ Versions:
  - `hp-server-psu-webserver-api.bin`  Compiled with both Home Assistant and a Web Server component. (Open device IP in web browser to see all exposed sensors/data)
  - `hp-server-psu-no_webserver-api.bin` Compiled with Home Assistant API only, no Web Server component included.
  - `hp-server-psu-webserver-no_api.bin` Compiled with Web Server component only, no Home Assistant API included.
-*YAML files used during compile are included for inspection, but are not utilized when flashing a BIN file. If modifications are desired, you need to compile the firmware yourself.*
+
+**YAML files used during compile are included for inspection, but are not utilized when flashing a BIN file. If modifications are desired, you need to compile the firmware yourself.**
+
 All versions immediately open a HOTSPOT on fresh boot:
  - SSID: "HP Server PSU"
  - Password: "123456789"
