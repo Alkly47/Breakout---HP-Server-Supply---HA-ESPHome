@@ -1,4 +1,8 @@
 # Breakout---HP-Server-Supply---HA-ESPHome
+
+# ESPHome version 2025.2 removed "custom components"
+# -This software is currently limited in it's function until I figure out a way to rewrite everything within the restrictive bounds of ESPHome
+
 Firmware to integrate my breakout board into Home Assistant via ESPHome
 - Modified from the KCORES Open Source code found here:
   https://github.com/KCORES/KCORES-CSPS-to-ATX-Converter/tree/main/Software
