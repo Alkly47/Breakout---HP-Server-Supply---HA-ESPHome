@@ -9,7 +9,7 @@ esphome:
     - CSPS/KCORES_CSPS.cpp
 
 ### "Custom components" are deprecated as of Esphome 2025.2
-### The following "external component" returns "custom component" function and successfully compiles.
+### The following "external component" returns "custom component" function and successfully compiles, but there are functional issues....
 external_components:
   - source:
       type: git
