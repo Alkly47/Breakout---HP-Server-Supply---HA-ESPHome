@@ -7,7 +7,7 @@ Firmware to integrate my breakout board into Home Assistant via ESPHome
 - Modified from the KCORES Open Source code found here:
   https://github.com/KCORES/KCORES-CSPS-to-ATX-Converter/tree/main/Software
 
-This yaml creates a PMBus/i2c device compatible with my breakout board and an attached SSD1306 OLED display. Built with Arduino Framework for ESP8266. (Currently untested on any ESP32 variants)
+This yaml creates a PMBus/i2c device compatible with my power supply breakout board and an attached SSD1306 OLED display. Built with Arduino Framework for ESP8266. (Currently untested on any ESP32 variants)
 
 Exposes: (All data comes from PSU except ADS1115)
  - Embedded information about the PSU ("Name", Manufacturer, Date Code, "Spare Part" Number, "Option Kit" Number, and "CT" Barcode)
