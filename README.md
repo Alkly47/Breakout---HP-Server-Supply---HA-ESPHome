@@ -23,6 +23,6 @@ To compile yourself:
  - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
 
-**Pre-compiled binaries can be found in the `firmware` folder.
+**Pre-compiled binary (`.bin`) can be found in the `firmware` folder.
 
 
