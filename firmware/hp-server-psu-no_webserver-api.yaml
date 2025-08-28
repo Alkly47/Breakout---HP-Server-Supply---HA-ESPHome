@@ -16,7 +16,7 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  domain: !secret net_domain
+#  domain: !secret net_domain
   ap:
     password: "123456789"
 
