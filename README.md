@@ -19,7 +19,7 @@ Exposes: (All data comes from PSU except ADS1115)
 
 Note: Current and Power reporting from the PSU is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
 
-To compile yourself:
+# To Use:
  - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
 
