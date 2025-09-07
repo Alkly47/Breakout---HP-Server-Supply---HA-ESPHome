@@ -751,7 +751,7 @@ sensor:
     update_interval: 1s
     filters:
       - or:
-        - delta: .1
+        - delta: 1
         - throttle: 30s
     lambda: !lambda |-
       auto& device_failed = id(dev_fail)[9];
