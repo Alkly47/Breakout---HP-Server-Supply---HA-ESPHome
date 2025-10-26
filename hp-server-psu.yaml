@@ -42,7 +42,7 @@ status_led:
     inverted: true
 
 i2c:
-  - frequency: 100kHz ## 200kHz seems to be maximum, sort-of stable, bus speed for the PSU, but results in occasional corrupt data; faster results in complete bus lockup and esp crash. 100kHz is the recommended frequency.
+  - frequency: 50kHz ## 200kHz seems to be maximum, sort-of stable, bus speed for the PSU, but results in occasional corrupt data; faster results in complete bus lockup and esp crash. 100kHz is the recommended max frequency. 50hkz is default for compatibility
 
 ## Declare generic i2c devices to access PSU
 i2c_device:
