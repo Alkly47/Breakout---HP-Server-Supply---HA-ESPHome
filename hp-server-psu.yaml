@@ -189,7 +189,33 @@ globals: ## Must exist for use within sensor lambdas
     restore_value: no
     initial_value: "10"
 
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
 sensor:
+  - platform: total_daily_energy
+    name: 'Total Daily Input Energy'
+    power_id: power_in
+    unit_of_measurement: 'kWh'
+    state_class: total_increasing
+    device_class: energy
+    accuracy_decimals: 3
+    filters:
+      # Multiplication factor from W to kW is 0.001
+      - multiply: 0.001
+
+  - platform: total_daily_energy
+    name: 'Total Daily Output Energy'
+    power_id: power_out
+    unit_of_measurement: 'kWh'
+    state_class: total_increasing
+    device_class: energy
+    accuracy_decimals: 3
+    filters:
+      # Multiplication factor from W to kW is 0.001
+      - multiply: 0.001
+      
   - platform: wifi_signal
     name: "WiFi Signal Sensor"
     id: esp_signal
