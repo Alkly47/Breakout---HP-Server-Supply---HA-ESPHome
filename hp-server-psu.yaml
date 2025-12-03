@@ -350,6 +350,9 @@ sensor:
     unit_of_measurement: RPM
     update_interval: 1s
     filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 2
       - or:
         - delta: 10.0
         - throttle: 30s   
@@ -405,6 +408,9 @@ sensor:
     unit_of_measurement: °C
     update_interval: 1s
     filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 2
       - or:
         - delta: .5
         - throttle: 30s
@@ -460,6 +466,9 @@ sensor:
     unit_of_measurement: °C
     update_interval: 1s
     filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 2
       - or:
         - delta: .5
         - throttle: 30s
