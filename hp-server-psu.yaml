@@ -17,6 +17,7 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  min_auth_mode: WPA2
   ap:
     password: "123456789"
 
@@ -227,6 +228,7 @@ sensor:
 
   - platform: ads1115
     id: ads_12v_main_current
+    state_class: measurement
     device_class: current
     multiplexer: 'A0_GND'
     gain: 4.096
@@ -241,6 +243,7 @@ sensor:
   
   - platform: ads1115
     id: ads_12v_main_voltage
+    state_class: measurement
     device_class: voltage
     multiplexer: 'A1_GND'
     gain: 4.096
@@ -255,6 +258,7 @@ sensor:
   
   - platform: ads1115
     id: ads_12v_stby_voltage
+    state_class: measurement
     device_class: voltage
     multiplexer: 'A2_GND'
     gain: 4.096
@@ -269,6 +273,7 @@ sensor:
   
   - platform: ads1115
     id: ads_5v_stby_voltage
+    state_class: measurement
     device_class: voltage
     multiplexer: 'A3_GND'
     gain: 4.096
@@ -285,6 +290,7 @@ sensor:
     name: "Peak Amps Out"  
     id: peak_amps_out
     accuracy_decimals: 1
+    state_class: measurement
     device_class: current
     unit_of_measurement: A
     update_interval: 1s
@@ -339,6 +345,7 @@ sensor:
     name: "Fan Speed"
     id: fan_speed
     accuracy_decimals: 0
+    state_class: measurement
     device_class: speed
     unit_of_measurement: RPM
     update_interval: 1s
@@ -393,6 +400,7 @@ sensor:
     name: "Intake Air Temp"
     id: temp1
     accuracy_decimals: 1
+    state_class: measurement
     device_class: temperature
     unit_of_measurement: °C
     update_interval: 1s
@@ -447,6 +455,7 @@ sensor:
     name: "Internal PSU Temp"
     id: temp2
     accuracy_decimals: 1
+    state_class: measurement
     device_class: temperature
     unit_of_measurement: °C
     update_interval: 1s
@@ -501,6 +510,7 @@ sensor:
     name: "Power Out"
     id: power_out
     accuracy_decimals: 1
+    state_class: measurement
     device_class: power
     unit_of_measurement: W
     update_interval: 1s
@@ -555,6 +565,7 @@ sensor:
     name: "Current Out"
     id: current_out
     accuracy_decimals: 1
+    state_class: measurement
     device_class: current
     unit_of_measurement: A
     update_interval: 1s
@@ -609,6 +620,7 @@ sensor:
     name: "Voltage Out"
     id: voltage_out
     accuracy_decimals: 1
+    state_class: measurement
     device_class: voltage
     unit_of_measurement: V
     update_interval: 1s
@@ -664,6 +676,7 @@ sensor:
     name: "Power In"
     id: power_in
     accuracy_decimals: 1
+    state_class: measurement
     device_class: power
     unit_of_measurement: W
     update_interval: 1s
@@ -718,6 +731,7 @@ sensor:
     name: "Current In"
     id: current_in
     accuracy_decimals: 2
+    state_class: measurement
     device_class: current
     unit_of_measurement: A
     update_interval: 1s
@@ -772,6 +786,7 @@ sensor:
     name: "Voltage In"
     id: voltage_in
     accuracy_decimals: 1
+    state_class: measurement
     device_class: voltage
     unit_of_measurement: V
     update_interval: 1s
@@ -914,13 +929,3 @@ text_sensor:
         return {std::string((char*)data, 14)};
       }
       return {};
-
-
-          
-
-
-
-
-
-
-
