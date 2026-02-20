@@ -9,3 +9,4 @@ Connect to the wifi hotspot and navigate to the captive portal ("Sign into this 
 
 This firmware can allow the device to be directly discoverable by Home Assistant via the ESPHome Add-On.
 
+***These binaries are not updated frequently. For the latest code, utilize the `hp-server-psu.yaml` located in the root of this repo, and compile yourself***
