@@ -20,6 +20,6 @@ Note: Current and Power reporting from the PSU is questionable at low load. Util
  - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
 
-**Pre-compiled binary (`.bin`) can be found in the `firmware` folder.
+**Pre-compiled binary (`.bin`) can be found in the `firmware` folder. Recommended to compile yourself from `yaml` for the latest code improvements and updates
 
 
