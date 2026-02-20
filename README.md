@@ -10,9 +10,9 @@ Exposes: (All data comes from PSU except ADS1115)
  - Embedded information about the PSU ("Name", Manufacturer, Date Code, "Spare Part" Number, "Option Kit" Number, and "CT" Barcode)
  - Fan speed reporting and control (Minimum Limit)
  - Intake Air Temperature and Internal PSU Temperature
- - AC Input: Voltage, Current, and Power
- - DC Output: Voltage, Current, Power, and "Peak" Current (A value that resets to zero each time the output cycles "off", or the power supply loses AC power)
- - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt
+ - AC Input: Voltage (Volts), Current (Amps), and Power (Watts)
+ - DC Output: Voltage (Volts), Current (Amps), Power (Watts), and "Peak" Current (An Amps value that resets to zero each time the output cycles "off", or the power supply loses AC power)
+ - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt.
 
 Note: Current and Power reporting from the PSU is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
 
