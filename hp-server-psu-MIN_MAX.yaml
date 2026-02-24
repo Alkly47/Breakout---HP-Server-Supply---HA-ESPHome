@@ -1,0 +1,1132 @@
+esphome:
+  name: hp-psu ##Change as desired
+  name_add_mac_suffix: True
+  friendly_name: HP Server PSU ##Change as desired
+  
+esp8266:
+  board: d1_mini
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+  password: ""
+
+wifi:
+  ##ssid: !secret wifi_ssid
+  ##password: !secret wifi_password
+  min_auth_mode: WPA2
+  ap:
+    password: "123456789"
+
+captive_portal:
+  id: my_portal
+improv_serial:
+web_server:
+  port: 80
+  log: false
+  version: 2
+
+switch:
+  - platform: restart
+    name: "Reboot ESP"
+
+button:
+  - platform: safe_mode
+    name: "Restart ESP (Safe Mode)"
+
+#status_led:
+#  pin:
+#    number: D4
+#    inverted: true
+
+i2c:
+  - frequency: 50kHz ## 200kHz seems to be maximum, sort-of stable, bus speed for the PSU, but results in occasional corrupt data; faster results in complete bus lockup and esp crash. 100kHz is the recommended max frequency. 50hkz is default for compatibility
+
+## Declare generic i2c devices to access PSU
+i2c_device:
+  - id: psu_dev
+    address: 0x5f
+  - id: psu_rom
+    address: 0x57
+
+ads1115:
+  - address: 0x48
+
+font:
+  - file:
+      type: gfonts
+      family: Varela
+      weight: 400
+    id: body_font
+    size: 13
+    bpp: 2
+  - file:
+      type: gfonts
+      family: Varela
+      weight: 400
+    id: ads_body_font
+    size: 12
+    bpp: 2
+  - file:
+      type: gfonts
+      family: Varela
+      weight: 400
+    id: peak_font
+    size: 24
+    bpp: 2
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: 500
+    id: header_font
+    size: 16
+    bpp: 2
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: 400
+    id: small_header_font
+    size: 8
+    bpp: 1
+    
+interval:
+  - interval: 5s
+    then:
+      - display.page.show_next: oled_display
+      - component.update: oled_display
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    id: oled_display
+    address: 0x3C
+    update_interval: .5s
+    pages: 
+      - id: page1
+        lambda: |-
+          it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "AC INPUT");
+          it.printf(0, 16, id(body_font), "Voltage:");
+          it.printf(128, 16, id(body_font), TextAlign::RIGHT, "%.3f V", id(voltage_in).state);
+          it.printf(0, 32, id(body_font), "Current:");
+          it.printf(128, 32, id(body_font), TextAlign::RIGHT, "%.2f A", id(current_in).state);
+          it.printf(0, 48, id(body_font), "Power:");
+          it.printf(128, 48, id(body_font), TextAlign::RIGHT, "%.1f W", id(power_in).state);
+      - id: page2
+        lambda: |-
+          it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "DC OUTPUT");
+          it.printf(0, 16, id(body_font), "Voltage:");
+          it.printf(128, 16, id(body_font), TextAlign::RIGHT, "%.3f V", id(voltage_out).state);
+          it.printf(0, 32, id(body_font), "Current:");
+          it.printf(128, 32, id(body_font), TextAlign::RIGHT, "%.2f A", id(current_out).state);
+          it.printf(0, 48, id(body_font), "Power:");
+          it.printf(128, 48, id(body_font), TextAlign::RIGHT, "%.1f W", id(power_out).state);
+      - id: page3
+        lambda: |-
+          it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "THERMALS");
+          it.printf(0, 16, id(body_font), "Intake Temp:");
+          it.printf(128, 16, id(body_font), TextAlign::RIGHT, "%.1f°C", id(temp1).state);
+          it.printf(0, 32, id(body_font), "PSU Temp:");
+          it.printf(128, 32, id(body_font), TextAlign::RIGHT, "%.1f°C", id(temp2).state);
+          it.printf(0, 48, id(body_font), "Fan:");
+          it.printf(128, 48, id(body_font), TextAlign::RIGHT, "%.0f rpm", id(fan_speed).state);
+      - id: page4
+        lambda: |-
+          it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "ADS1115");
+          it.printf(0, 12, id(ads_body_font), "Out Volts:");
+          it.printf(128, 12, id(ads_body_font), TextAlign::RIGHT, "%.2fV", id(ads_12v_main_voltage).state);
+          it.printf(0, 24, id(ads_body_font), "Out Amps:");
+          it.printf(128, 24, id(ads_body_font), TextAlign::RIGHT, "%.2fA", id(ads_12v_main_current).state);
+          it.printf(0, 36, id(ads_body_font), "12v STBY:");
+          it.printf(128, 36, id(ads_body_font), TextAlign::RIGHT, "%.3fV", id(ads_12v_stby_voltage).state);
+          it.printf(0, 48, id(ads_body_font), "5v STBY:");
+          it.printf(128, 48, id(ads_body_font), TextAlign::RIGHT, "%.3fV", id(ads_5v_stby_voltage).state);
+#      - id: page5
+#        lambda: |-
+#          it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "PEAK AMPS OUT");
+#          it.printf(64, 40, id(peak_font), TextAlign::CENTER, "%.3fA", id(peak_amps_out).state);
+      - id: page5
+        lambda: |-
+          if (id(delayed_clear_records).is_running()) {
+            it.printf(0, 0, id(header_font), "MIN/MAX");
+            int total_sec = id(reset_countdown_seconds);
+            int m = total_sec / 60;
+            int s = total_sec % 60;
+            it.printf(128, 0, id(small_header_font), TextAlign::TOP_RIGHT, "WIPE IN");
+            it.printf(128, 8, id(small_header_font), TextAlign::TOP_RIGHT, "%d:%02d", m, s);
+          } 
+          else if (id(session_timer).is_running()) {
+            it.printf(0, 0, id(header_font), "MIN/MAX");
+            it.printf(128, 0, id(small_header_font), TextAlign::TOP_RIGHT, "SESSION");
+            it.printf(128, 8, id(small_header_font), TextAlign::TOP_RIGHT, "AGE: %dm", id(session_age_minutes));
+          }
+          else {
+            it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "MIN/MAX");
+          }
+          it.printf(0, 16, id(ads_body_font), "psuV");
+          it.printf(128, 16, id(ads_body_font), TextAlign::RIGHT, "%.2f/%.2f", id(v_out_min).state, id(v_out_max).state);
+          it.printf(0, 32, id(ads_body_font), "adsV");
+          it.printf(128, 32, id(ads_body_font), TextAlign::RIGHT, "%.2f/%.2f", id(ads_min_volt).state, id(ads_max_volt).state);
+          it.printf(0, 48, id(ads_body_font), "MaxAmps");
+          it.printf(128, 48, id(ads_body_font), TextAlign::RIGHT, "%.3f A", id(peak_amps_out).state);
+      - id: page6
+        lambda: |-
+          std::string dev_Name = App.get_name();
+          if (id(my_portal).is_active()) {
+            it.printf(64, 0, id(header_font), TextAlign::TOP_CENTER, "HOTSPOT ACTIVE");
+            it.printf(0, 16, id(body_font), "SSID:");
+            it.printf(128, 32, id(body_font), TextAlign::RIGHT, "%s", dev_Name.c_str());
+            it.printf(0, 48, id(body_font), "PASS:");
+            it.printf(128,48, id(body_font), TextAlign::RIGHT, "123456789");
+            }
+          else {
+            it.printf(0, 0, id(header_font), "WIFI");
+            it.printf(128, 0, id(header_font), TextAlign::RIGHT, "%.0f dbm", id(esp_signal).state);
+            it.printf(0, 16, id(body_font), "IP:");
+            it.printf(128, 16, id(body_font), TextAlign::RIGHT, "%s", id(esp_IP).state.c_str());
+            it.printf(0, 32, id(body_font), "SSID:");
+            it.printf(128, 32, id(body_font), TextAlign::RIGHT, "%s", id(esp_SSID).state.c_str());
+            it.printf(0, 48, id(body_font), "-%s-", id(esp_MAC).state.c_str());
+          }
+
+globals: ## Must exist for use within sensor lambdas
+  - id: addr_psu
+    type: int
+    restore_value: no
+    initial_value: "0x5f"
+  - id: addr_rom
+    type: int
+    restore_value: no
+    initial_value: "0x57"
+  - id: min_rpm_old_value 
+    type: int
+    restore_value: yes
+    initial_value: "1500"
+  - id: dev_fail  ## Boolean array for storing device failures
+    type: bool[10]
+    restore_value: no
+    initial_value: "{false,false,false,false,false,false,false,false,false,false,}"
+  - id: chksum_err ## Array for storing accrued errors, checksum and i2c communications
+    type: uint8_t[10]
+    restore_value: no
+    initial_value: '{0,0,0,0,0,0,0,0,0,0}'
+  - id: allow_error_recovery  ## When set to "true", allows accrued errors to decrease with successful sensor reads. Can help prevent hitting the "fail_limit" for random/intermittent errors over time.
+    type: bool
+    restore_value: no
+    initial_value: "true"
+  - id: fail_limit  ## The number of accrued errors before marking a sensor as "failed" and ceasing further attempts to communicate over i2c
+    type: uint8_t
+    restore_value: no
+    initial_value: "10"
+  - id: default_countdown_seconds
+    type: int
+    initial_value: '600'
+  - id: reset_countdown_seconds
+    type: int
+    initial_value: '600'
+  - id: time_since_reset
+    type: int
+    initial_value: '0'
+  - id: session_age_minutes
+    type: int
+    initial_value: '0'
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+script:
+  - id: delayed_clear_records
+    mode: restart
+    then:
+      - lambda: "id(reset_countdown_seconds) = id(default_countdown_seconds);" 
+      - while:
+          condition:
+            lambda: "return id(reset_countdown_seconds) > 0;"
+          then:
+            - delay: 1s
+            - lambda: |-
+                id(reset_countdown_seconds) -= 1;
+                id(reset_timer_sensor).publish_state(id(reset_countdown_seconds));
+      
+      - lambda: |-
+          id(ads_min_volt).publish_state(NAN);
+          id(ads_max_volt).publish_state(NAN);
+          id(v_out_min).publish_state(NAN);
+          id(v_out_max).publish_state(NAN);
+          id(time_since_reset) = 0; // Start the "Age" clock
+          ESP_LOGD("CUSTOM", "Timeout reached: Records wiped.");
+      
+      - while:
+          condition:
+            lambda: "return true;"
+          then:
+            - delay: 1min
+            - lambda: "id(time_since_reset) += 1;"
+  - id: session_timer
+    mode: restart
+    then:
+      - while:
+          condition: { lambda: "return true;" }
+          then:
+            - delay: 1min
+            - lambda: "id(session_age_minutes) += 1;"
+            
+sensor:
+  - platform: template
+    name: "Mix:Max Reset Timer"
+    id: reset_timer_sensor
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    update_interval: never
+    lambda: "return id(reset_countdown_seconds);"
+
+  - platform: total_daily_energy
+    name: 'Total Daily Input Energy'
+    power_id: power_in
+    unit_of_measurement: 'kWh'
+    state_class: total_increasing
+    device_class: energy
+    accuracy_decimals: 3
+    filters:
+      # Multiplication factor from W to kW is 0.001
+      - multiply: 0.001
+
+  - platform: total_daily_energy
+    name: 'Total Daily Output Energy'
+    power_id: power_out
+    unit_of_measurement: 'kWh'
+    state_class: total_increasing
+    device_class: energy
+    accuracy_decimals: 3
+    filters:
+      # Multiplication factor from W to kW is 0.001
+      - multiply: 0.001
+      
+  - platform: wifi_signal
+    name: "WiFi Signal Sensor"
+    id: esp_signal
+    filters:
+        - or:
+          - delta: 3
+          - throttle: 30s
+    update_interval: 1s
+
+  - platform: ads1115
+    id: ads_12v_main_current
+    state_class: measurement
+    device_class: current
+    multiplexer: 'A0_GND'
+    gain: 4.096
+    name: "12v Main Current"
+    filters:
+        - multiply: 26.25   ## (26.25mV / Amp)
+        - or:
+          - delta: 0.005
+          - throttle: 30s
+    unit_of_measurement: "A"
+    update_interval: 1s  
+  
+  - platform: ads1115
+    id: ads_12v_main_voltage
+    state_class: measurement
+    device_class: voltage
+    multiplexer: 'A1_GND'
+    gain: 4.096
+    name: "12v Main Voltage"
+    filters:
+        - multiply: 3.75
+        - or:
+          - delta: 0.1
+          - throttle: 30s       
+    unit_of_measurement: "V"
+    update_interval: 1s
+    on_value:
+      then:
+        - lambda: |-
+            const float threshold_v = 10.0; // <--- Adjust your threshold here
+            static bool was_off = true;
+            float current_v = x;
+
+            if (std::isnan(current_v)) return;
+
+            if (current_v > threshold_v) {
+              // PSU JUST TURNED ON
+              if (was_off) {
+                was_off = false;
+                id(delayed_clear_records).stop();
+                id(session_age_minutes) = 0; 
+                id(session_timer).execute();  
+                id(ads_min_volt).publish_state(current_v);
+                id(ads_max_volt).publish_state(current_v);
+                id(reset_countdown_seconds) = id(default_countdown_seconds); 
+              }
+
+              // MIN/MAX LOGIC
+              if (std::isnan(id(ads_min_volt).state) || current_v < id(ads_min_volt).state) {
+                id(ads_min_volt).publish_state(current_v);
+              }
+              if (std::isnan(id(ads_max_volt).state) || current_v > id(ads_max_volt).state) {
+                id(ads_max_volt).publish_state(current_v);
+              }
+            } 
+            else {
+              // PSU IS BELOW THRESHOLD (OFF)
+              if (!was_off) {
+                was_off = true;
+                id(session_timer).stop();
+                id(delayed_clear_records).execute(); 
+              }
+            }
+
+  - platform: template
+    name: "12v Main Min"
+    id: ads_min_volt
+    unit_of_measurement: "V"
+    device_class: voltage
+    update_interval: never
+    lambda: "return id(ads_min_volt).state;"
+
+  - platform: template
+    name: "12v Main Max"
+    id: ads_max_volt
+    unit_of_measurement: "V"
+    device_class: voltage
+    update_interval: never
+    lambda: "return id(ads_max_volt).state;"
+  
+  - platform: ads1115
+    id: ads_12v_stby_voltage
+    state_class: measurement
+    device_class: voltage
+    multiplexer: 'A2_GND'
+    gain: 4.096
+    name: "12v STBY Voltage"
+    filters:
+        - multiply: 3.75
+        - or:
+          - delta: 0.1
+          - throttle: 30s
+    unit_of_measurement: "V"
+    update_interval: 1s
+  
+  - platform: ads1115
+    id: ads_5v_stby_voltage
+    state_class: measurement
+    device_class: voltage
+    multiplexer: 'A3_GND'
+    gain: 4.096
+    name: "5v STBY Voltage"
+    filters:
+        - multiply: 1.666667
+        - or:
+          - delta: 0.1
+          - throttle: 30s
+    unit_of_measurement: "V"
+    update_interval: 1s
+
+  - platform: template
+    name: "Peak Amps Out"  
+    id: peak_amps_out
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: current
+    unit_of_measurement: A
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: 0.1
+        - throttle: 30s          
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[0];
+      if (device_failed) {
+        id(peak_amps_out).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(peak_amps_out).get_name().c_str();
+      auto& count = id(chksum_err)[0];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x36;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0x00FFFF);
+      return x/64.0; // Scale the value by 64
+
+  - platform: template
+    name: "Fan Speed"
+    id: fan_speed
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: speed
+    unit_of_measurement: RPM
+    update_interval: 1s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 2
+      - or:
+        - delta: 10.0
+        - throttle: 30s   
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[1];
+      if (device_failed) {
+        id(fan_speed).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(fan_speed).get_name().c_str();
+      auto& count = id(chksum_err)[1];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x1E;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x; // No Scaling
+      
+  - platform: template
+    name: "Intake Air Temp"
+    id: temp1
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+    update_interval: 1s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 2
+      - or:
+        - delta: .5
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[2];
+      if (device_failed) {
+        id(temp1).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(temp1).get_name().c_str();
+      auto& count = id(chksum_err)[2];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x1A;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x/64.0; // Scale by 64
+
+  - platform: template
+    name: "Internal PSU Temp"
+    id: temp2
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+    update_interval: 1s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 2
+      - or:
+        - delta: .5
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[3];
+      if (device_failed) {
+        id(temp2).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(temp2).get_name().c_str();
+      auto& count = id(chksum_err)[3];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x1C;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x/64.0; // Scale by 64
+
+  - platform: template
+    name: "Power Out"
+    id: power_out
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: W
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: .5
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[4];
+      if (device_failed) {
+        id(power_out).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(power_out).get_name().c_str();
+      auto& count = id(chksum_err)[4];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x12;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x; // No Scaling
+  
+  - platform: template
+    name: "Current Out"
+    id: current_out
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: current
+    unit_of_measurement: A
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: .1
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[5];
+      if (device_failed) {
+        id(current_out).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(current_out).get_name().c_str();
+      auto& count = id(chksum_err)[5];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x10;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x/64.0; // Scale by 64
+
+  - platform: template
+    name: "Voltage Out"
+    id: voltage_out
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: voltage
+    unit_of_measurement: V
+    update_interval: 1s
+    filters:
+      - filter_out: 1.5
+      - or:
+        - delta: .1
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[6];
+      if (device_failed) {
+        id(voltage_out).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(voltage_out).get_name().c_str();
+      auto& count = id(chksum_err)[6];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x0E;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x/254.5; // Scale by 254.5 (Default of 255, adjusted to match multimeter)
+    on_value:
+      then:
+        - lambda: |-
+            const float threshold_v = 10.0; // <--- Adjust your threshold here
+            static bool was_off = true;
+            float current_v = x;
+
+            if (std::isnan(current_v)) return;
+
+            if (current_v > threshold_v) {
+              if (was_off) {
+                was_off = false;
+                id(delayed_clear_records).stop();
+                id(session_age_minutes) = 0; 
+                id(session_timer).execute();
+                id(v_out_min).publish_state(current_v);
+                id(v_out_max).publish_state(current_v);
+                id(reset_countdown_seconds) = id(default_countdown_seconds); 
+              }
+              if (std::isnan(id(v_out_min).state) || current_v < id(v_out_min).state) {
+                id(v_out_min).publish_state(current_v);
+              }
+              if (std::isnan(id(v_out_max).state) || current_v > id(v_out_max).state) {
+               id(v_out_max).publish_state(current_v);
+              }
+            } 
+            else {
+              if (!was_off) {
+                was_off = true;
+                id(session_timer).stop();
+                id(delayed_clear_records).execute();
+              }
+            }
+
+  - platform: template
+    name: "Voltage Out Min"
+    id: v_out_min
+    unit_of_measurement: "V"
+    device_class: voltage
+    accuracy_decimals: 1
+    update_interval: never
+    lambda: "return id(v_out_min).state;"
+
+  - platform: template
+    name: "Voltage Out Max"
+    id: v_out_max
+    unit_of_measurement: "V"
+    device_class: voltage
+    accuracy_decimals: 1
+    update_interval: never
+    lambda: "return id(v_out_max).state;"
+
+  - platform: template
+    name: "Power In"
+    id: power_in
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: W
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: .5
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[7];
+      if (device_failed) {
+        id(power_in).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(power_in).get_name().c_str();
+      auto& count = id(chksum_err)[7];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x0C;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x; // No Scaling
+
+  - platform: template
+    name: "Current In"
+    id: current_in
+    accuracy_decimals: 2
+    state_class: measurement
+    device_class: current
+    unit_of_measurement: A
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: .05
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[8];
+      if (device_failed) {
+        id(current_in).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(current_in).get_name().c_str();
+      auto& count = id(chksum_err)[8];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x0A;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);    
+      return x/64.0; // Scale by 64
+
+  - platform: template
+    name: "Voltage In"
+    id: voltage_in
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: voltage
+    unit_of_measurement: V
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: 1
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[9];
+      if (device_failed) {
+        id(voltage_in).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(voltage_in).get_name().c_str();
+      auto& count = id(chksum_err)[9];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x08;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];         
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x/32.0; // Scale by 32
+
+number:
+  - platform: template
+    id: min_rpm
+    name: "Minimum Fan RPM"
+    min_value: 1500
+    max_value: 18000
+    step: 500
+    set_action:
+      - lambda: !lambda |-
+          uint16_t data = (uint16_t)x;
+          uint8_t dataAddr = 0x40;
+          uint8_t valLSB = data & 0xFF;
+          uint8_t valMSB = (data >> 8) & 0xFF;
+          uint8_t cs = (id(addr_psu) << 1) + dataAddr + valLSB + valMSB;
+          uint8_t regCS = ((0xFF - cs) + 1) & 0xff;
+          std::vector<uint8_t> data_payload = {valLSB, valMSB, regCS};
+          if (id(psu_dev).write_bytes(dataAddr, data_payload)) {
+            ESP_LOGD("number", "Successfully wrote minimum RPM value %d to PSU", data);
+            id(min_rpm).publish_state(x);
+            id(min_rpm_old_value) = id(min_rpm).state;
+          } else {
+            ESP_LOGE("number", "Failed to write minimum RPM value %d to PSU. Reverting state.", data);
+            // On failure, revert to the old value by publishing it directly
+            id(min_rpm).publish_state(id(min_rpm_old_value));
+          }
+
+text_sensor:
+  - platform: wifi_info
+    ip_address: 
+      name: esp-IP
+      id: esp_IP
+    mac_address: 
+      name: esp-MAC
+      id: esp_MAC
+    ssid: 
+      name: esp-SSID
+      id: esp_SSID
+
+  - platform: template
+    name: "Spare Part Number"
+    update_interval: 24h
+    lambda: !lambda |-
+      uint8_t data[10];
+      if (id(psu_rom).read_bytes(0x12, data, 10)) {
+        return {std::string((char*)data, 10)};
+      }
+      return {};
+  - platform: template
+    name: "Date Code"
+    update_interval: 24h
+    lambda: !lambda |-
+      uint8_t data[8];
+      if (id(psu_rom).read_bytes(0x1D, data, 8)) {
+        return {std::string((char*)data, 8)};
+      }
+      return {};
+  - platform: template
+    name: "Manufacturer"
+    update_interval: 24h
+    lambda: !lambda |-
+      uint8_t data[5];
+      if (id(psu_rom).read_bytes(0x2C, data, 5)) {
+        return {std::string((char*)data, 5)};
+      }
+      return {};
+  - platform: template
+    name: "PSU Name"
+    update_interval: 24h
+    lambda: !lambda |-
+      uint8_t data[26];
+      if (id(psu_rom).read_bytes(0x32, data, 26)) {
+        return {std::string((char*)data, 26)};
+      }
+      return {};
+  - platform: template
+    name: "Option Kit Number"
+    update_interval: 24h
+    lambda: !lambda |-
+      uint8_t data[10];
+      if (id(psu_rom).read_bytes(0x4D, data, 10)) {
+        return {std::string((char*)data, 10)};
+      }
+      return {};
+  - platform: template
+    name: "CT Barcode"
+    update_interval: 24h
+    lambda: !lambda |-
+      uint8_t data[14];
+      if (id(psu_rom).read_bytes(0x5B, data, 14)) {
+        return {std::string((char*)data, 14)};
+      }
+      return {};
