@@ -197,6 +197,7 @@ time:
 sensor:
   - platform: total_daily_energy
     name: 'Total Daily Input Energy'
+    id: daily_energy_in
     power_id: power_in
     unit_of_measurement: 'kWh'
     state_class: total_increasing
@@ -208,6 +209,7 @@ sensor:
 
   - platform: total_daily_energy
     name: 'Total Daily Output Energy'
+    id: daily_energy_out
     power_id: power_out
     unit_of_measurement: 'kWh'
     state_class: total_increasing
@@ -788,8 +790,7 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);    
-      return x/64.0; // Scale by 64
+      auto x = (rec & 0X00FFFF);
 
   - platform: template
     name: "Voltage In"
@@ -845,6 +846,234 @@ sensor:
       }
       auto x = (rec & 0X00FFFF);
       return x/32.0; // Scale by 32
+
+  ## Rolling 1/5/15-min averages of input power (heat-load points for the cooling system).
+  ## Read P_IN (0x0C) directly at 1s so window_size maps to wall-clock minutes.
+  ## Shares error-tracking slot 7 with power_in (same register).
+  - platform: template
+    name: "Power In Avg 01min"
+    id: power_in_avg_1m
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: W
+    update_interval: 1s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 60 ## 60 x 1s samples = 1 min
+          send_every: 1
+          send_first_at: 1
+      - or:
+        - delta: 1
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[7];
+      if (device_failed) {
+        id(power_in_avg_1m).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(power_in_avg_1m).get_name().c_str();
+      auto& count = id(chksum_err)[7];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x0C;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x; // No Scaling
+
+  - platform: template
+    name: "Power In Avg 05min"
+    id: power_in_avg_5m
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: W
+    update_interval: 1s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 300 ## 300 x 1s samples = 5 min
+          send_every: 1
+          send_first_at: 1
+      - or:
+        - delta: 1
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[7];
+      if (device_failed) {
+        id(power_in_avg_5m).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(power_in_avg_5m).get_name().c_str();
+      auto& count = id(chksum_err)[7];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x0C;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x; // No Scaling
+
+  - platform: template
+    name: "Power In Avg 15min"
+    id: power_in_avg_15m
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: W
+    update_interval: 1s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 900 ## 900 x 1s samples = 15 min
+          send_every: 1
+          send_first_at: 1
+      - or:
+        - delta: 1
+        - throttle: 30s
+    lambda: !lambda |-
+      auto& device_failed = id(dev_fail)[7];
+      if (device_failed) {
+        id(power_in_avg_15m).mark_failed();
+        return NAN;
+      }
+      const char* sensor_name = id(power_in_avg_15m).get_name().c_str();
+      auto& count = id(chksum_err)[7];
+      auto limit = id(fail_limit);
+      uint32_t rec = 0xFFFF;
+      uint8_t dataAddr = 0x0C;
+      uint8_t regCS = ((0xFF - (dataAddr + (id(addr_psu) << 1))) + 1) & 0xFF;
+      uint8_t buffer[3];
+      if (!id(psu_dev).write_byte(dataAddr, regCS) || !id(psu_dev).read_bytes_raw(buffer, 3)) {
+        ESP_LOGE("HP_PSU", "[%s] I2C communication failed!", sensor_name);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      rec = buffer[0];
+      rec |= buffer[1] << 8;
+      rec |= buffer[2] << 16;
+      uint8_t cs = 0;
+      cs += ((rec & 0xFF0000) >> 16);
+      cs += ((rec & 0xFF00) >> 8);
+      cs += (rec & 0xFF);
+      cs = ((0xFF - cs) + 1) & 0xFF;
+      if (cs != 0) {
+        ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
+      if (count > 0 && id(allow_error_recovery)) {
+        count--;
+      }
+      auto x = (rec & 0X00FFFF);
+      return x; // No Scaling
+
+  ## PSU loss points: delta between input and output power/energy (efficiency monitoring).
+  - platform: template
+    name: "PSU Loss"
+    id: psu_loss
+    accuracy_decimals: 1
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: W
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: 1
+        - throttle: 30s
+    lambda: "return id(power_in).state - id(power_out).state;"
+
+  - platform: template
+    name: "PSU Loss Percent"
+    id: psu_loss_percent
+    accuracy_decimals: 1
+    state_class: measurement
+    unit_of_measurement: "%"
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: 0.5
+        - throttle: 30s
+    lambda: !lambda |-
+      float pin = id(power_in).state;
+      float pout = id(power_out).state;
+      if (isnan(pin) || isnan(pout) || pin <= 0.0f) {
+        return NAN;
+      }
+      return (pin - pout) / pin * 100.0f;
+
+  - platform: template
+    name: "Total Daily Energy Loss"
+    id: daily_energy_loss
+    accuracy_decimals: 3
+    state_class: total_increasing
+    device_class: energy
+    unit_of_measurement: kWh
+    update_interval: 1s
+    filters:
+      - or:
+        - delta: 0.001
+        - throttle: 30s
+    lambda: "return id(daily_energy_in).state - id(daily_energy_out).state;"
 
 number:
   - platform: template
