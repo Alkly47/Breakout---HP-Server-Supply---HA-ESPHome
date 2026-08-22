@@ -339,6 +339,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0x00FFFF);
+      if (x >= 16000) { // 250A max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/64.0; // Scale the value by 64
 
   - platform: template
@@ -397,6 +405,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 30000) { // 30000rpm max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x; // No Scaling
       
   - platform: template
@@ -455,6 +471,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 12000) { // 187.5C max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -513,6 +537,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 12000) { // 187.5C max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -568,6 +600,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 5000) { // 5000W max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x; // No Scaling
   
   - platform: template
@@ -623,6 +663,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 16000) { // 250A max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -679,6 +727,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 8000) { // 31.4V max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/254.5; // Scale by 254.5 (Default of 255, adjusted to match multimeter)
 
   - platform: template
@@ -734,6 +790,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 5000) { // 5000W max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x; // No Scaling
 
   - platform: template
@@ -788,7 +852,15 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);    
+      auto x = (rec & 0X00FFFF);
+      if (x >= 2048) { // 32A at 1/64A resolution - physically impossible for this PSU; rejects corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x (%u/64 A). Rejecting.", sensor_name, x, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -844,6 +916,14 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      if (x >= 12800) { // 400V max - physically impossible for this PSU; reject corrupted reads that happen to pass the checksum
+        ESP_LOGE("HP_PSU", "[%s] Implausible raw value 0x%04x. Rejecting.", sensor_name, x);
+        if (++count > limit) {
+          device_failed = true;
+          ESP_LOGE("HP_PSU", "[%s] Repeat Errors: fail_limit reached. Disabling I2C attempts.", sensor_name);
+        }
+        return NAN;
+      }
       return x/32.0; // Scale by 32
 
 number:
