@@ -791,6 +791,7 @@ sensor:
         count--;
       }
       auto x = (rec & 0X00FFFF);
+      return x/64.0; // Scale by 64
 
   - platform: template
     name: "Voltage In"
