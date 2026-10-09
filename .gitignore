@@ -1,0 +1,13 @@
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+
+# ESPHome
+.esphome/
+secrets.yaml
+
+# Build artifacts (keep firmware/*.bin — those are the published releases)
+*.elf
+*.map
+*.bin.tmp
