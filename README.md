@@ -14,7 +14,7 @@ Exposes: (All data comes from PSU except ADS1115)
  - DC Output: Voltage (Volts), Current (Amps), Power (Watts), and "Peak" Current (An Amps value that resets to zero each time the output cycles "off", or the power supply loses AC power)
  - ADS1115 on the breakout board measuring three separate voltages and the PSU current shunt.
 
-Note: Current and Power reporting from the PSU is questionable at low load. Utilizing the data from the ADS115 at low loads is more reliable.
+Note: Current and Power reporting from the PSU is questionable at low load. Utilizing the data from the ADS1115 at low loads is more reliable.
 
 # Updates:
  - MIN/MAX (In the filename), Add new software sensors that calculate the minimum and maximum voltages from the other voltage sensors. Intended to be used on the OLED display, so the "Peak Amps" page has been restructured to also display the min/max values and show dynamic timers to indicate the state of the displayed data.
