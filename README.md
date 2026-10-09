@@ -29,4 +29,8 @@ Note: Current and Power reporting from the PSU is questionable at low load. Util
 
 **Pre-compiled binary (`.bin`) can be found in the `firmware` folder. Recommended to compile yourself from `yaml` for the latest code improvements and updates
 
+# Documentation:
+ - `BUILDING.md` — how to set up the toolchain, compile, and flash
+ - `FIRMWARE_LOGIC.md` — internals: PMBus read path, error tracking & recovery, sensor range guards, power/energy math
+
 
