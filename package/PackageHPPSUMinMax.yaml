@@ -420,6 +420,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 16000) { // 250A max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -435,7 +436,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0x00FFFF);
       return x/64.0; // Scale the value by 64
 
   - platform: template
@@ -482,6 +482,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 30000) { // 30000rpm max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -497,7 +498,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x; // No Scaling
       
   - platform: template
@@ -544,6 +544,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 12000) { // 187.5C max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -559,7 +560,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -606,6 +606,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 12000) { // 187.5C max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -621,7 +622,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -665,6 +665,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 5000) { // 5000W max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -680,7 +681,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x; // No Scaling
   
   - platform: template
@@ -724,6 +724,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 16000) { // 250A max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -739,7 +740,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -784,6 +784,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 8000) { // 31.4V max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -799,7 +800,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x/254.5; // Scale by 254.5 (Default of 255, adjusted to match multimeter) 
     on_value:
       then:
@@ -893,6 +893,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 5000) { // 5000W max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -908,7 +909,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x; // No Scaling
 
   - platform: template
@@ -952,6 +952,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 2048) { // 32A at 1/64A resolution - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -966,8 +967,7 @@ sensor:
       }
       if (count > 0 && id(allow_error_recovery)) {
         count--;
-      }
-      auto x = (rec & 0X00FFFF);    
+      }   
       return x/64.0; // Scale by 64
 
   - platform: template
@@ -1011,6 +1011,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 12800) { // 400V max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -1026,7 +1027,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x/32.0; // Scale by 32
       
   ## Rolling 1/5/15-min averages of input power (heat-load points for the cooling system).
@@ -1077,6 +1077,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 5000) { // 5000W max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -1092,7 +1093,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x; // No Scaling
 
   - platform: template
@@ -1140,6 +1140,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 5000) { // 5000W max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -1155,7 +1156,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x; // No Scaling
 
   - platform: template
@@ -1203,6 +1203,7 @@ sensor:
       cs += ((rec & 0xFF00) >> 8);
       cs += (rec & 0xFF);
       cs = ((0xFF - cs) + 1) & 0xFF;
+      auto x = (rec & 0x00FFFF);
       if (cs != 0 || x >= 5000) { // 5000W max - physically impossible; reject corrupted reads
         if (cs != 0) {
           ESP_LOGE("HP_PSU", "[%s] Mismatch checksum. addr: 0x%02x, chk: 0x%02x", sensor_name, dataAddr, cs);
@@ -1218,7 +1219,6 @@ sensor:
       if (count > 0 && id(allow_error_recovery)) {
         count--;
       }
-      auto x = (rec & 0X00FFFF);
       return x; // No Scaling
 
   ## PSU loss points: delta between input and output power/energy (efficiency monitoring).
