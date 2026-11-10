@@ -664,8 +664,7 @@ sensor:
         count--;
       }
       return x/254.5; // Scale by 254.5 (Default of 255, adjusted to match multimeter)
-								
-				
+
   - platform: template
     name: "Power In"
     id: power_in
