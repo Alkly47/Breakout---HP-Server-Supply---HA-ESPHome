@@ -22,10 +22,14 @@ Note: Current and Power reporting from the PSU is questionable at low load. Util
    Min/Max timers: 
      - there is a timer on the OLED min/max page that shows when a reset has occurred less than an hour ago
      - there is a timer on the OLED min/max page that shows a ten minute countdown when values are 'frozen' after the power supply cycles off. When the timer reaches Zero, the 'frozen' values are purged.
+     - Add new error tracking & recovery, sensor range guards and additional power/energy sensors.
+ 
     
 # To Use:
  - Create new device in ESPhome, copy yaml and modify with appropriate api, ota, and wifi creds.
  - Install to device.
+
+*Packages are now available (see the "example.Yaml" in the `package` folder). This greatly improves the ability to update multiple devices to current version with minimal effort. (The yaml file becomes much cleaner, too!)
 
 **Pre-compiled binary (`.bin`) can be found in the `firmware` folder. Recommended to compile yourself from `yaml` for the latest code improvements and updates
 
