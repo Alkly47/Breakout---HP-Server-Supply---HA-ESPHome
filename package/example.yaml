@@ -47,6 +47,14 @@ status_led:
     inverted: true
 ##
 
+# packages:
+#   # shorthand form github://username/repository/[folder/]file-path.yml[@branch-or-tag]
+#   remote_package_shorthand: github://Alkly47/Breakout---HP-Server-Supply---HA-ESPHome/package/PackageHPPSUMinMax.yaml@packages-Testing
 packages:
-  # shorthand form github://username/repository/[folder/]file-path.yml[@branch-or-tag]
-  remote_package_shorthand: github://Alkly47/Breakout---HP-Server-Supply---HA-ESPHome/package/PackageHPPSUMinMax.yaml@packages-Testing
+  remote_package_shorthand:
+    url: https://github.com/Alkly47/Breakout---HP-Server-Supply---HA-ESPHome
+    ref: packages-Testing
+    files:
+      - package/PackageHPPSUMinMax.yaml
+      - package/i2c_bus_recovery.yaml
+    refresh: 0s
