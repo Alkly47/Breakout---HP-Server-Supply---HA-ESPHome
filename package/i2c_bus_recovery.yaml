@@ -1,0 +1,93 @@
+## In the event of PSU PMBus lockup (Which collapses the entire i2c bus), attempt to manually trigger i2c recovery on ESP reboot.
+## This helps to avoid the need for a manual PSU power cycle to recover communications
+
+## Set D1-mini defaults. Can be changed in the main yaml file utilizing further `substitutions` (Untested)
+substitutions:
+  i2c_recovery_scl: "5"
+  i2c_recovery_sda: "4"
+
+esphome:
+  on_boot:
+    - priority: 800
+      then:
+        - lambda: |-
+            const int scl_pin = ${i2c_recovery_scl}; // D1
+            const int sda_pin = ${i2c_recovery_sda}; // D2
+
+            auto scl_high = [&]() { pinMode(scl_pin, INPUT_PULLUP); };
+            auto scl_low  = [&]() { pinMode(scl_pin, OUTPUT); digitalWrite(scl_pin, LOW); };
+            auto sda_high = [&]() { pinMode(sda_pin, INPUT_PULLUP); };
+            auto sda_low  = [&]() { pinMode(sda_pin, OUTPUT); digitalWrite(sda_pin, LOW); };
+
+            scl_high();
+            sda_high();
+
+            if (digitalRead(sda_pin) == LOW || digitalRead(scl_pin) == LOW) {
+              ESP_LOGW("I2C_RECOVERY", "Bus stuck (SDA=%d, SCL=%d). Starting aggressive recovery...",
+                       digitalRead(sda_pin), digitalRead(scl_pin));
+              for (int i = 0; i < 36; i++) {
+                scl_low();
+                delayMicroseconds(100);
+                scl_high();
+                delayMicroseconds(100);
+
+                unsigned long start = millis();
+                while (digitalRead(scl_pin) == LOW && (millis() - start < 50)) {
+                  delay(1);
+                }
+
+                if (digitalRead(sda_pin) == HIGH && digitalRead(scl_pin) == HIGH) {
+                  ESP_LOGI("I2C_RECOVERY", "Bus released after %d clocks!", i + 1);
+                  break;
+                }
+              }
+
+              sda_low();
+              delayMicroseconds(100);
+              scl_high();
+              delayMicroseconds(100);
+              sda_high();
+              delayMicroseconds(100);
+
+              delay(100);
+
+              if (digitalRead(sda_pin) == HIGH && digitalRead(scl_pin) == HIGH) {
+                ESP_LOGI("I2C_RECOVERY", "Sending I2C General Call Software Reset...");
+                auto write_bit = [&](bool bit) {
+                  bit ? sda_high() : sda_low();
+                  delayMicroseconds(50);
+                  scl_high();
+                  delayMicroseconds(100);
+                  scl_low();
+                  delayMicroseconds(50);
+                };
+                auto write_byte = [&](uint8_t data) {
+                  for (int b = 7; b >= 0; b--) write_bit((data >> b) & 1);
+                  // 9th clock for ACK/NACK
+                  sda_high();
+                  delayMicroseconds(50);
+                  scl_high();
+                  delayMicroseconds(100);
+                  scl_low();
+                  delayMicroseconds(50);
+                };
+
+                sda_low();
+                delayMicroseconds(100);
+                scl_low();
+                delayMicroseconds(100);
+
+                write_byte(0x00); // General Call Address
+                write_byte(0x06); // Reset Command
+
+                sda_low();
+                delayMicroseconds(50);
+                scl_high();
+                delayMicroseconds(100);
+                sda_high();
+                delay(50);
+              } else {
+                ESP_LOGE("I2C_RECOVERY", "Recovery failed: SDA=%d, SCL=%d. PSU standby MCU requires AC unplug.",
+                         digitalRead(sda_pin), digitalRead(scl_pin));
+              }
+            }
