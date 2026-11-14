@@ -57,4 +57,4 @@ packages:
     files:
       - package/PackageHPPSUMinMax.yaml
       - package/i2c_bus_recovery.yaml
-    refresh: 0s
+#    refresh: 0s
