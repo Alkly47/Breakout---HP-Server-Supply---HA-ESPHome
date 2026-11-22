@@ -38,7 +38,7 @@ button:
     name: "Restart ESP (Safe Mode)"
 
 i2c:
-  - frequency: 50kHz ## 200kHz seems to be maximum, sort-of stable, bus speed for the PSU, but results in occasional corrupt data; faster results in complete bus lockup and esp crash. 100kHz is the recommended max frequency. 50hkz is default for compatibility
+  - frequency: 50kHz ## 200kHz seems to be maximum, sort-of stable, bus speed for the PSU, but results in occasional corrupt data; faster results in eventual bus lockup. 100kHz is the recommended max frequency. 50hkz is default for compatibility
 
 ## Comment out if not using homeassistant API, to avoid endless blinking blue LED
 status_led:
@@ -47,14 +47,11 @@ status_led:
     inverted: true
 ##
 
-# packages:
-#   # shorthand form github://username/repository/[folder/]file-path.yml[@branch-or-tag]
-#   remote_package_shorthand: github://Alkly47/Breakout---HP-Server-Supply---HA-ESPHome/package/PackageHPPSUMinMax.yaml@packages-Testing
 packages:
   remote_package_shorthand:
     url: https://github.com/Alkly47/Breakout---HP-Server-Supply---HA-ESPHome
-    ref: packages-Testing
+    ref: main
     files:
       - package/PackageHPPSUMinMax.yaml
       - package/i2c_bus_recovery.yaml
-#    refresh: 0s
+    refresh: 1d

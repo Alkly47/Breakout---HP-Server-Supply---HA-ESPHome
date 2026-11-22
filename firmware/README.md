@@ -1,5 +1,5 @@
 ## Pre-Compiled firmware for easy setup. ##
-Flash .bin file to ESP8266 device using ESPHome Web Flasher. (https://web.esphome.io/)
+Flash .bin file to ESP8266 device using [ESPHome Web Flasher](https://web.esphome.io/)
 
 All versions open a Wifi HOTSPOT on fresh boot:
  - SSID: "HP Server PSU" (Or hp-psu-[mac_suffix])
